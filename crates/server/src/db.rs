@@ -26,7 +26,7 @@ impl Database {
         let mut conn = self.conn.clone();
         let exists: bool = conn.exists("idx:agents").await.unwrap_or(false);
         if exists {
-            let count: i64 = conn.scard("idx:agents").await.unwrap_or(0);
+            let count = self.scard("idx:agents").await;
             if count > 0 {
                 info!("Database already seeded, skipping");
                 return;
@@ -36,7 +36,7 @@ impl Database {
 
         // Initialize empty index sets so SMEMBERS/SCARD don't cause Redis keyspace misses.
         // Sentinel member `_` is filtered out in list_* functions.
-            for key in &["idx:agents", "idx:storages", "idx:backups", "idx:schedules"] {
+        for key in &["idx:agents", "idx:storages", "idx:backups", "idx:schedules"] {
             let _: Result<(), _> = conn.sadd(key, "_").await;
         }
         // Initialize metrics TTL config so GET config:metrics_ttl doesn't miss
