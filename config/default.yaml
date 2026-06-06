@@ -1,0 +1,20 @@
+# pgShield Configuration
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+database:
+  redis_url: "redis://redis:6379"
+
+storage:
+  backup_dir: "data/backups"
+
+auth:
+  enabled: false
+  username: "admin"
+  password: "admin"
+  jwt_secret: ""
+
+metrics:
+  ttl_days: 30
