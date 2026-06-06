@@ -1,0 +1,16 @@
+# pgShield Agent Configuration
+# The agent runs pg_dump/pg_restore on the database server.
+
+# pgShield server URL (agent registers here)
+server_url: "http://pgshield:8080"
+
+# Listen address and port for incoming commands
+listen_addr: "0.0.0.0"
+listen_port: 9443
+
+# Directory to store backup files temporarily
+backup_dir: "/var/lib/pgshield/backups"
+
+# TLS configuration (optional, provide paths to cert and key files)
+tls_cert: ""
+tls_key: ""

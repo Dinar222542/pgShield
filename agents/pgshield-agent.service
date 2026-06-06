@@ -1,0 +1,18 @@
+[Unit]
+Description=pgShield Backup Agent
+Documentation=https://github.com/yourorg/pgshield
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pgshield-agent --config /etc/pgshield/agent.yaml
+Restart=always
+RestartSec=5
+User=root
+Group=root
+Environment=RUST_LOG=info
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

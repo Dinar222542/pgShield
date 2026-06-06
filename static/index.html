@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pgShield Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242837;
+    --border: #2d3248;
+    --text: #e1e4ed;
+    --text2: #8b8fa3;
+    --accent: #22d3a0;
+    --accent-dark: #1a9e7a;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #a78bfa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+  }
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo {
+    padding: 0 20px 24px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .logo svg { width: 28px; height: 28px; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); background: rgba(34,211,160,0.08); border-left-color: var(--accent); }
+  .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 8px 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .topbar .user { color: var(--text2); }
+  .topbar .user strong { color: var(--text); }
+  .topbar .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .topbar .logout-btn:hover { color: var(--red); border-color: var(--red); }
+  .page { display: none; }
+  .page.active { display: block; }
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { color: var(--text2); margin-bottom: 32px; font-size: 14px; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card:has(.value.green)::before { background: var(--accent); }
+  .stat-card:has(.value.blue)::before { background: var(--blue); }
+  .stat-card:has(.value.red)::before { background: var(--red); }
+  .stat-card:has(.value.orange)::before { background: var(--orange); }
+  .stat-card:has(.value.purple)::before { background: var(--purple); }
+  .stat-card .label { color: var(--text2); font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 36px; font-weight: 800; }
+  .stat-card .value.green { color: var(--accent); }
+  .stat-card .value.red { color: var(--red); }
+  .stat-card .value.blue { color: var(--blue); }
+  .stat-card .value.orange { color: var(--orange); }
+  .stat-card .value.purple { color: var(--purple); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th, td { text-align: left; padding: 12px 16px; font-size: 14px; }
+  th { background: var(--surface2); color: var(--text2); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { border-top: 1px solid var(--border); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge.online, .badge.connected { background: rgba(34,211,160,0.15); color: var(--accent); }
+  .badge.offline, .badge.disconnected { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.unknown { background: rgba(139,143,163,0.2); color: var(--text2); }
+  .badge.error { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.completed { background: rgba(34,211,160,0.15); color: var(--accent); }
+  .badge.running { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge.failed { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.full { background: rgba(34,211,160,0.1); color: var(--accent); }
+  .badge.incremental { background: rgba(59,130,246,0.1); color: var(--blue); }
+  .badge.wal { background: rgba(245,158,11,0.1); color: var(--orange); }
+  .badge.local { background: rgba(34,211,160,0.1); color: var(--accent); }
+  .badge.nfs { background: rgba(59,130,246,0.1); color: var(--blue); }
+  .badge.s3 { background: rgba(245,158,11,0.1); color: var(--orange); }
+  .badge.sftp { background: rgba(139,143,163,0.1); color: var(--text2); }
+  .badge.fc { background: rgba(167,139,250,0.1); color: var(--purple); }
+  .badge.zfs { background: rgba(34,211,160,0.1); color: var(--accent); }
+
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar select, .toolbar input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primary { background: var(--accent-dark); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-danger { background: rgba(239,68,68,0.15); border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text2);
+  }
+  .empty svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .loading { text-align: center; padding: 48px; color: var(--text2); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 640px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 { font-size: 20px; margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; color: var(--text2); font-size: 13px; margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+  .toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 200;
+    animation: fadeIn 0.2s;
+  }
+  .toast.success { background: rgba(34,211,160,0.2); border: 1px solid var(--accent); color: var(--accent); }
+  .toast.error { background: rgba(239,68,68,0.2); border: 1px solid var(--red); color: var(--red); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .page { transition: opacity 0.15s; }
+  .mon-subpage, #page-settings .mon-subpage { transition: opacity 0.12s; }
+  .stat-card { transition: transform 0.12s, border-color 0.12s; }
+  .stat-card:hover { transform: translateY(-1px); border-color: var(--accent-dark); }
+  .nav-item { transition: all 0.12s; }
+  .chart-card canvas { width: 100% !important; height: 200px !important; }
+  .mon-subnav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .mon-subnav-item {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .mon-subnav-item:hover { color: var(--text); background: var(--surface2); }
+  .mon-subnav-item.active { color: var(--accent); background: rgba(34,211,160,0.12); font-weight: 600; }
+  .mon-subpage { display: none; }
+  .mon-subpage.active { display: block; }
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+  .login-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-overlay.open { display: flex; }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 360px;
+  }
+  .login-box h2 { font-size: 24px; margin-bottom: 8px; }
+  .login-box .sub { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+  .login-error { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+  .audit-table-wrap {
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .audit-table-wrap table thead { position: sticky; top: 0; z-index: 1; }
+  .chart-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-label .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .sidebar { width: 60px; }
+    .sidebar .logo span, .sidebar .nav-item span { display: none; }
+    .sidebar .logo { padding: 0 16px 24px; justify-content: center; }
+    .sidebar .nav-item { justify-content: center; padding: 12px; }
+    .main { padding: 16px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat-card .value { font-size: 28px; }
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h2>pgShield</h2>
+    <div class="sub">Войдите для доступа к панели управления</div>
+    <div class="form-group"><label>Логин</label><input id="login-user" placeholder="admin" autocomplete="username"></div>
+    <div class="form-group"><label>Пароль</label><input id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+    <div class="login-error" id="login-error">Неверный логин или пароль</div>
+    <button class="btn btn-primary" onclick="doLogin()" style="width:100%;margin-top:8px">Войти</button>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <span>pgShield</span>
+  </div>
+  <div class="nav-item" data-page="dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>Dashboard</span>
+  </div>
+  <div class="nav-item" data-page="storage">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    <span>Storage</span>
+  </div>
+  <div class="nav-item" data-page="agents">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>Agents</span>
+  </div>
+  <div class="nav-item" data-page="backups">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span>Backups</span>
+  </div>
+  <div class="nav-item" data-page="schedules">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Schedules</span>
+  </div>
+  <div class="nav-item" data-page="monitoring">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Monitoring</span>
+  </div>
+  <div class="nav-item" data-page="audit">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span>Audit</span>
+  </div>
+  <div class="nav-item" data-page="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    <span>Settings</span>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <span class="user">Вы вошли как <strong id="current-user">admin</strong></span>
+    <button class="logout-btn" onclick="doLogout()">Выйти</button>
+  </div>
+  <div class="main-content" id="main-content" style="display:none">
+  <!-- Dashboard -->
+  <div class="page" id="page-dashboard">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Общая статистика системы резервного копирования</p>
+    <div class="stats" id="stats-container">
+      <div class="stat-card"><div class="label">Агенты</div><div class="value blue" id="stat-agents">—</div></div>
+      <div class="stat-card"><div class="label">Online</div><div class="value green" id="stat-online">—</div></div>
+      <div class="stat-card"><div class="label">Хранилища</div><div class="value purple" id="stat-storage">—</div></div>
+      <div class="stat-card"><div class="label">Всего бекапов</div><div class="value blue" id="stat-backups">—</div></div>
+      <div class="stat-card"><div class="label">Успешные</div><div class="value green" id="stat-ok">—</div></div>
+      <div class="stat-card"><div class="label">Ошибки</div><div class="value red" id="stat-fail">—</div></div>
+      <div class="stat-card"><div class="label">Баз данных</div><div class="value blue" id="stat-dbs">—</div></div>
+      <div class="stat-card"><div class="label">Использовано</div><div class="value orange" id="stat-usage">—</div></div>
+    </div>
+    <h2 style="font-size:18px;margin-bottom:16px;color:var(--text2)">Redis</h2>
+    <div class="stats" id="redis-stats">
+      <div class="stat-card"><div class="label">Ping</div><div class="value green" id="redis-ping">—</div></div>
+      <div class="stat-card"><div class="label">Память</div><div class="value orange" id="redis-memory">—</div></div>
+      <div class="stat-card"><div class="label">Клиенты</div><div class="value blue" id="redis-clients">—</div></div>
+      <div class="stat-card"><div class="label">Ops/sec</div><div class="value purple" id="redis-ops">—</div></div>
+      <div class="stat-card"><div class="label">Hit Rate</div><div class="value green" id="redis-hit">—</div></div>
+      <div class="stat-card"><div class="label">Ключи</div><div class="value blue" id="redis-keys">—</div></div>
+      <div class="stat-card"><div class="label">Uptime</div><div class="value" id="redis-uptime">—</div></div>
+      <div class="stat-card"><div class="label">Version</div><div class="value" style="font-size:20px" id="redis-version">—</div></div>
+    </div>
+  </div>
+
+  <!-- Storage -->
+  <div class="page" id="page-storage">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h1>Storage Backends</h1>
+      <button class="btn btn-primary" onclick="openStorageModal()">+ Add Storage</button>
+    </div>
+    <p class="subtitle">Управление хранилищами: Local, NFS</p>
+    <table><thead><tr><th>Имя</th><th>Тип</th><th>Статус</th><th>Compression</th><th>Dedup</th><th>Retention</th><th>Использовано</th><th></th></tr></thead><tbody id="storage-list"></tbody></table>
+  </div>
+
+  <!-- Agents -->
+  <div class="page" id="page-agents">
+    <h1>Agents</h1>
+    <p class="subtitle">Управление агентами резервного копирования</p>
+    <div class="toolbar">
+      <button class="btn" onclick="fetchAgents()" style="padding:8px 16px">🔄 Обновить</button>
+    </div>
+    <table><thead><tr><th>Имя</th><th>Хост</th><th>Порт</th><th>Статус</th><th>Версия</th><th>Последний раз</th><th>ID</th></tr></thead><tbody id="agents-list"></tbody></table>
+  </div>
+
+  <!-- Backups -->
+  <div class="page" id="page-backups">
+    <h1>Backups</h1>
+    <p class="subtitle">История резервных копий</p>
+    <div class="toolbar">
+      <button class="btn" onclick="fetchBackups()" style="padding:8px 16px">🔄 Обновить</button>
+    </div>
+    <table><thead><tr><th>База</th><th>Тип</th><th>Статус</th><th>Размер</th><th>Агент</th><th>Хранилище</th><th>Создан</th><th></th></tr></thead><tbody id="backups-list"></tbody></table>
+  </div>
+
+  <!-- Schedules -->
+  <div class="page" id="page-schedules">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h1>Schedules</h1>
+      <button class="btn btn-primary" onclick="openScheduleModal()">+ Add Schedule</button>
+    </div>
+    <p class="subtitle">Расписания автоматического резервного копирования</p>
+    <table><thead><tr><th>Название</th><th>База</th><th>Хост:Порт</th><th>Cron</th><th>Retention</th><th>Последний запуск</th><th>Статус</th><th></th></tr></thead><tbody id="schedules-list"></tbody></table>
+  </div>
+
+  <!-- Monitoring -->
+  <div class="page" id="page-monitoring">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h1>Monitoring</h1>
+      <div class="toolbar" style="margin-bottom:0">
+        <select id="metrics-range" onchange="loadMonitoring()">
+          <option value="24h">Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </select>
+      </div>
+    </div>
+    <p class="subtitle">История метрик сервера, Redis, агентов и хранилищ</p>
+
+    <div class="mon-subnav">
+      <div class="mon-subnav-item active" data-sub="server">Server</div>
+      <div class="mon-subnav-item" data-sub="redis">Redis</div>
+      <div class="mon-subnav-item" data-sub="resources">Agents &amp; Storages</div>
+    </div>
+
+    <div class="mon-subpage active" id="mon-server">
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--accent)"></span>CPU (%)</div><canvas id="chart-cpu"></canvas></div>
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--blue)"></span>RAM (%)</div><canvas id="chart-ram"></canvas></div>
+        <div class="chart-card" style="grid-column:1/-1"><div class="chart-label"><span class="dot" style="background:var(--orange)"></span>Disk (%)</div><canvas id="chart-disk"></canvas></div>
+      </div>
+    </div>
+
+    <div class="mon-subpage" id="mon-redis">
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--purple)"></span>Ping (ms)</div><canvas id="chart-redis-ping"></canvas></div>
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--orange)"></span>Memory</div><canvas id="chart-redis-memory"></canvas></div>
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--blue)"></span>Clients</div><canvas id="chart-redis-clients"></canvas></div>
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--accent)"></span>Ops/sec</div><canvas id="chart-redis-ops"></canvas></div>
+        <div class="chart-card" style="grid-column:1/-1"><div class="chart-label"><span class="dot" style="background:var(--purple)"></span>Hit Rate (%)</div><canvas id="chart-redis-hit"></canvas></div>
+      </div>
+    </div>
+
+    <div class="mon-subpage" id="mon-resources">
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--accent)"></span>Agents</div><canvas id="chart-agents"></canvas></div>
+        <div class="chart-card"><div class="chart-label"><span class="dot" style="background:var(--blue)"></span>Storages</div><canvas id="chart-storages"></canvas></div>
+        <div class="chart-card" style="grid-column:1/-1"><div class="chart-label"><span class="dot" style="background:var(--orange)"></span>Backups</div><canvas id="chart-backups"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <div class="page" id="page-audit">
+    <h1>Audit Log</h1>
+    <p class="subtitle">Все действия в системе</p>
+    <div class="toolbar">
+      <button class="btn" onclick="loadAudit()" style="padding:8px 16px">🔄 Обновить</button>
+    </div>
+    <div class="audit-table-wrap">
+      <table><thead><tr><th>Время</th><th>Действие</th><th>Тип</th><th>ID</th><th>Детали</th><th>Пользователь</th></tr></thead><tbody id="audit-list"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="page" id="page-settings">
+    <h1>Settings</h1>
+    <p class="subtitle">Конфигурация сервера</p>
+
+    <div class="mon-subnav" style="margin-bottom:24px">
+      <div class="mon-subnav-item active" data-set="general" onclick="switchSettings('general')">General</div>
+      <div class="mon-subnav-item" data-set="users" onclick="switchSettings('users')">Users</div>
+    </div>
+
+    <div class="mon-subpage active" id="set-general"></div>
+    <div class="mon-subpage" id="set-users"></div>
+  </div>
+</div>
+</div>
+
+<!-- Storage Modal -->
+<div class="modal-overlay" id="storage-modal">
+  <div class="modal">
+    <h2 id="storage-modal-title">Add Storage Backend</h2>
+    <div class="form-group">
+      <label>Название</label>
+      <input id="sf-name" placeholder="e.g. Main Backup Pool">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Тип хранилища</label>
+            <select id="sf-type" onchange="onStorageTypeChange()">
+          <option value="local">Local</option>
+          <option value="nfs">NFS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Compression</label>
+        <select id="sf-compression">
+          <option value="none">None</option>
+          <option value="gzip">Gzip</option>
+          <option value="zstd" selected>Zstd</option>
+          <option value="lz4">LZ4</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Retention (дней)</label>
+        <input id="sf-retention" type="number" value="30">
+      </div>
+      <div class="form-group">
+        <label>Dedup</label>
+        <select id="sf-dedup">
+          <option value="false">Off</option>
+          <option value="true">On</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Описание</label>
+      <input id="sf-description" placeholder="Optional description">
+    </div>
+
+    <!-- Local config -->
+    <div id="config-local" class="storage-config">
+      <div class="form-group"><label>Path</label><input id="sc-local-path" placeholder="/data/backups" value="/data/backups"></div>
+    </div>
+
+    <!-- NFS config -->
+    <div id="config-nfs" class="storage-config" style="display:none">
+      <div class="form-group"><label>Host</label><input id="sc-nfs-host" placeholder="192.168.10.100"></div>
+      <div class="form-group"><label>Export Path</label><input id="sc-nfs-export" placeholder="/exports/pgbackups"></div>
+      <div class="form-group"><label>Mount Options</label><input id="sc-nfs-opts" value="vers=4.2,hard,intr" placeholder="vers=4.2,hard,intr"></div>
+    </div>
+
+
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeStorageModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStorage()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="schedule-modal">
+  <div class="modal">
+    <h2 id="sched-modal-title">Add Schedule</h2>
+    <div class="form-group">
+      <label>Название</label>
+      <input id="sched-name" placeholder="e.g. Nightly Backup">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>База данных</label>
+        <input id="sched-database" placeholder="mydb">
+      </div>
+      <div class="form-group">
+        <label>Хранилище</label>
+        <select id="sched-storage"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Хост БД</label>
+        <input id="sched-host" placeholder="localhost">
+      </div>
+      <div class="form-group">
+        <label>Порт</label>
+        <input id="sched-port" type="number" value="5432">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>User</label>
+        <input id="sched-user" placeholder="postgres">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="sched-password" type="password" placeholder="password">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cron Expression</label>
+        <input id="sched-cron" placeholder="0 0 * * * *" value="0 0 * * * *">
+      </div>
+      <div class="form-group">
+        <label>Retention (дней)</label>
+        <input id="sched-retention" type="number" value="7">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('schedule-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSchedule()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Modal -->
+<div class="modal-overlay" id="restore-modal">
+  <div class="modal">
+    <h2>Restore Backup</h2>
+    <p class="subtitle" style="margin-bottom:16px">Укажите базу назначения для восстановления</p>
+    <div class="form-group">
+      <label>База назначения</label>
+      <input id="restore-target-db" placeholder="mydb_restored">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Хост</label>
+        <input id="restore-host" placeholder="localhost" value="localhost">
+      </div>
+      <div class="form-group">
+        <label>Порт</label>
+        <input id="restore-port" type="number" value="5432">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>User</label>
+        <input id="restore-user" placeholder="postgres">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="restore-password" type="password" placeholder="password">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('restore-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRestore()">Restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+const API = '';
+let storageData = { agents: [], backups: [], storages: [] };
+let editingStorageId = null;
+let authToken = localStorage.getItem('token') || null;
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+  const res = await fetch(API + path, {
+    headers,
+    ...opts,
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    authToken = null;
+    if (!document.getElementById('login-overlay').classList.contains('open')) {
+      document.getElementById('login-overlay').classList.add('open');
+    }
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function doLogin() {
+  const username = document.getElementById('login-user').value;
+  const password = document.getElementById('login-pass').value;
+  fetch(API + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  }).then(r => {
+    if (r.status === 403) {
+      document.getElementById('login-overlay').classList.remove('open');
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('current-user').textContent = 'admin';
+      init();
+      return null;
+    }
+    if (r.ok) return r.json();
+    throw new Error('fail');
+  }).then(data => {
+    if (!data) return;
+    authToken = data.token;
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('pgshield_user', username);
+    document.getElementById('current-user').textContent = username;
+    document.getElementById('login-overlay').classList.remove('open');
+    document.getElementById('login-error').style.display = 'none';
+    init();
+  }).catch(() => {
+    document.getElementById('login-error').style.display = 'block';
+  });
+}
+
+function doLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('pgshield_user');
+  localStorage.removeItem('pgshield_page');
+  localStorage.removeItem('pgshield_settings_tab');
+  authToken = null;
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-overlay').classList.add('open');
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('ru-RU');
+}
+
+function badge(cls, text) {
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+
+function fmtSize(bytes) {
+  if (!bytes && bytes !== 0) return '—';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0; let s = bytes;
+  while (s >= 1024 && i < u.length-1) { s /= 1024; i++; }
+  return s.toFixed(1) + ' ' + u[i];
+}
+
+async function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
+  localStorage.setItem('pgshield_page', name);
+  if (name === 'storage') fetchStorage();
+  if (name === 'agents') fetchAgents();
+  if (name === 'backups') fetchBackups();
+  if (name === 'schedules') fetchSchedules();
+  if (name === 'monitoring') loadMonitoring();
+  if (name === 'audit') loadAudit();
+  if (name === 'settings') {
+    await loadSettings();
+    const saved = localStorage.getItem('pgshield_settings_tab') || 'general';
+    switchSettings(saved);
+  }
+}
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => switchPage(el.dataset.page));
+});
+
+// ── Dashboard ──
+async function loadDashboard() {
+  try {
+    const s = await api('/api/dashboard/stats');
+    document.getElementById('stat-agents').textContent = s.total_agents;
+    document.getElementById('stat-online').textContent = s.online_agents;
+    document.getElementById('stat-storage').textContent = s.total_storage;
+    document.getElementById('stat-backups').textContent = s.total_backups;
+    document.getElementById('stat-ok').textContent = s.successful_backups;
+    document.getElementById('stat-fail').textContent = s.failed_backups;
+    document.getElementById('stat-dbs').textContent = s.total_databases;
+    document.getElementById('stat-usage').textContent = s.storage_used_human || '0 B';
+  } catch (e) { console.error(e); }
+}
+
+async function loadRedisHealth() {
+  try {
+    const r = await api('/api/redis');
+    document.getElementById('redis-ping').textContent = r.ping_ms.toFixed(1) + 'ms';
+    document.getElementById('redis-ping').className = 'value ' + (r.ping_ms < 5 ? 'green' : r.ping_ms < 20 ? 'orange' : 'red');
+    document.getElementById('redis-memory').textContent = r.used_memory_human || fmtSize(r.used_memory);
+    document.getElementById('redis-clients').textContent = r.connected_clients;
+    document.getElementById('redis-ops').textContent = r.ops_per_sec;
+    document.getElementById('redis-hit').textContent = r.hit_rate != null ? r.hit_rate.toFixed(1) + '%' : '—';
+    document.getElementById('redis-hit').className = 'value ' + (r.hit_rate != null && r.hit_rate > 95 ? 'green' : r.hit_rate != null && r.hit_rate > 80 ? 'orange' : '');
+    document.getElementById('redis-keys').textContent = r.total_keys;
+    document.getElementById('redis-uptime').textContent = fmtDuration(r.uptime_seconds);
+    document.getElementById('redis-version').textContent = r.version;
+  } catch (e) { console.error(e); }
+}
+
+// ── Storage ──
+async function fetchStorage() {
+  try {
+    storageData.storages = await api('/api/storage');
+    const tbody = document.getElementById('storage-list');
+    if (!storageData.storages.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><br>Нет хранилищ. Добавьте первое хранилище.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = storageData.storages.map(s => `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${badge(s.storage_type, s.storage_type.toUpperCase())}</td>
+      <td>${badge(s.status, s.status)}</td>
+      <td>${badge('completed', s.compression)}</td>
+      <td>${s.dedup_enabled ? badge('online', 'On') : badge('offline', 'Off')}</td>
+      <td>${s.retention_days}d</td>
+      <td>${s.used_space != null ? fmtSize(s.used_space) + ' / ' + fmtSize(s.total_space) : '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="testStorage('${s.id}')">Test</button>
+        <button class="btn btn-sm" onclick="editStorage('${s.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteStorage('${s.id}')">Del</button>
+      </td>
+    </tr>`).join('');
+  } catch (e) { toast('Failed to load storage: ' + e.message, 'error'); }
+}
+
+async function testStorage(id) {
+  try {
+    const res = await api('/api/storage/' + id + '/test', { method: 'POST' });
+    toast(res.message, res.success ? 'success' : 'error');
+  } catch (e) { toast('Test failed: ' + e.message, 'error'); }
+}
+
+async function deleteStorage(id) {
+  if (!confirm('Delete storage backend?')) return;
+  try {
+    await api('/api/storage/' + id, { method: 'DELETE' });
+    toast('Storage deleted');
+    fetchStorage(); loadDashboard();
+  } catch (e) { toast('Delete failed: ' + e.message, 'error'); }
+}
+
+function onStorageTypeChange() {
+  document.querySelectorAll('.storage-config').forEach(el => el.style.display = 'none');
+  const type = document.getElementById('sf-type').value;
+  const el = document.getElementById('config-' + type);
+  if (el) el.style.display = 'block';
+}
+
+function getStorageConfig() {
+  const type = document.getElementById('sf-type').value;
+  if (type === 'local') return { path: document.getElementById('sc-local-path').value };
+  if (type === 'nfs') return {
+    host: document.getElementById('sc-nfs-host').value,
+    export_path: document.getElementById('sc-nfs-export').value,
+    mount_options: document.getElementById('sc-nfs-opts').value,
+  };
+}
+
+function openStorageModal(data) {
+  editingStorageId = null;
+  document.getElementById('storage-modal-title').textContent = 'Add Storage Backend';
+  document.getElementById('sf-name').value = '';
+  document.getElementById('sf-type').value = 'local';
+  document.getElementById('sf-compression').value = 'zstd';
+  document.getElementById('sf-retention').value = '30';
+  document.getElementById('sf-dedup').value = 'false';
+  document.getElementById('sf-description').value = '';
+  document.getElementById('sc-local-path').value = '/data/backups';
+  document.getElementById('sc-nfs-host').value = '';
+  document.getElementById('sc-nfs-export').value = '';
+  document.getElementById('sc-nfs-opts').value = 'vers=4.2,hard,intr';
+
+  if (data) {
+    editingStorageId = data.id;
+    document.getElementById('storage-modal-title').textContent = 'Edit Storage Backend';
+    document.getElementById('sf-name').value = data.name;
+    document.getElementById('sf-type').value = data.storage_type;
+    document.getElementById('sf-compression').value = data.compression;
+    document.getElementById('sf-retention').value = data.retention_days;
+    document.getElementById('sf-dedup').value = data.dedup_enabled ? 'true' : 'false';
+    document.getElementById('sf-description').value = data.description || '';
+
+    const c = data.config;
+    if (c.path != null) document.getElementById('sc-local-path').value = c.path;
+    if (c.host != null) document.getElementById('sc-nfs-host').value = c.host;
+    if (c.export_path != null) document.getElementById('sc-nfs-export').value = c.export_path;
+    if (c.mount_options != null) document.getElementById('sc-nfs-opts').value = c.mount_options;
+  }
+
+  onStorageTypeChange();
+  document.getElementById('storage-modal').classList.add('open');
+}
+
+function editStorage(id) {
+  const data = storageData.storages.find(s => s.id === id);
+  if (data) openStorageModal(data);
+}
+
+function closeStorageModal() {
+  document.getElementById('storage-modal').classList.remove('open');
+}
+
+async function saveStorage() {
+  const payload = {
+    name: document.getElementById('sf-name').value,
+    storage_type: document.getElementById('sf-type').value,
+    config: getStorageConfig(),
+    retention_days: parseInt(document.getElementById('sf-retention').value) || 30,
+    compression: document.getElementById('sf-compression').value,
+    dedup_enabled: document.getElementById('sf-dedup').value === 'true',
+    description: document.getElementById('sf-description').value,
+  };
+  if (!payload.name) { toast('Name is required', 'error'); return; }
+
+  try {
+    if (editingStorageId) {
+      await api('/api/storage/' + editingStorageId, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Storage updated');
+    } else {
+      await api('/api/storage', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Storage created');
+    }
+    closeStorageModal();
+    fetchStorage();
+    loadDashboard();
+  } catch (e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+// ── Agents ──
+async function fetchAgents() {
+  try {
+    storageData.agents = await api('/api/agents');
+    renderAgentTable('agents-list', storageData.agents);
+  } catch (e) { console.error(e); }
+}
+
+function renderAgentTable(target, agents) {
+  const tbody = document.getElementById(target);
+  if (!agents.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Нет агентов</td></tr>'; return; }
+  tbody.innerHTML = agents.map(a => `<tr>
+    <td><strong>${a.name}</strong></td><td>${a.host}</td>
+    <td>${target === 'agents-list' ? a.port : ''}</td>
+    <td>${badge(a.status, a.status)}</td>
+    <td>v${a.version}</td>
+    <td>${fmtDate(a.last_seen)}</td>
+    ${target === 'agents-list' ? `<td style="font-size:11px;color:var(--text2)">${a.id.slice(0,8)}…</td>` : ''}
+  </tr>`).join('');
+}
+
+// ── Backups ──
+async function fetchBackups() {
+  try {
+    storageData.backups = await api('/api/backups');
+    const tbody = document.getElementById('backups-list');
+    if (!storageData.backups.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">Нет бекапов</td></tr>'; return; }
+    const storageMap = {};
+    storageData.storages.forEach(s => { storageMap[s.id] = s.name; });
+    tbody.innerHTML = storageData.backups.map(b => `<tr>
+      <td><strong>${b.database_name}</strong></td>
+      <td>${badge(b.backup_type, b.backup_type)}</td>
+      <td>${badge(b.status, b.status)}</td>
+      <td>${b.file_size ? fmtSize(b.file_size) : '—'}</td>
+      <td style="font-size:12px;color:var(--text2)">${b.agent_id.slice(0,8)}…</td>
+      <td style="font-size:12px;color:var(--text2)">${b.storage_id ? (storageMap[b.storage_id] || b.storage_id.slice(0,8) + '…') : '—'}</td>
+      <td>${fmtDate(b.created_at)}</td>
+      <td>${b.status === 'Completed' ? `<button class="btn btn-sm btn-primary" onclick="openRestoreModal('${b.id}')">Restore</button>` : ''}</td>
+    </tr>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+// ── Schedules ──
+
+async function fetchSchedules() {
+  try {
+    const data = await api('/api/schedule');
+    const tbody = document.getElementById('schedules-list');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">Нет расписаний</td></tr>'; return; }
+    tbody.innerHTML = data.map(s => `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.database}</td>
+      <td style="font-size:12px;color:var(--text2)">${s.db_host}:${s.db_port}</td>
+      <td><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:12px">${s.cron_expr}</code></td>
+      <td>${s.retention_days}d</td>
+      <td>${s.last_run ? fmtDate(new Date(s.last_run * 1000)) : '—'}</td>
+      <td>${badge(s.enabled ? 'completed' : 'failed', s.enabled ? 'ON' : 'OFF')} ${s.last_status ? badge(s.last_status === 'success' ? 'completed' : 'failed', s.last_status) : ''}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-sm" onclick="toggleSchedule('${s.id}')">${s.enabled ? '🔴' : '🟢'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSchedule('${s.id}')">🗑</button>
+      </td>
+    </tr>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function toggleSchedule(id) {
+  await api('/api/schedule/' + id + '/toggle', { method: 'POST' });
+  fetchSchedules();
+}
+
+async function deleteSchedule(id) {
+  if (!confirm('Delete this schedule?')) return;
+  await api('/api/schedule/' + id, { method: 'DELETE' });
+  fetchSchedules();
+}
+
+function openScheduleModal() {
+  openingSchedule = null;
+  document.getElementById('sched-modal-title').textContent = 'Add Schedule';
+  document.getElementById('sched-name').value = '';
+  document.getElementById('sched-database').value = '';
+  document.getElementById('sched-host').value = '';
+  document.getElementById('sched-port').value = '5432';
+  document.getElementById('sched-user').value = '';
+  document.getElementById('sched-password').value = '';
+  document.getElementById('sched-cron').value = '0 0 * * * *';
+  document.getElementById('sched-retention').value = '7';
+  // Populate storage dropdown
+  const sel = document.getElementById('sched-storage');
+  sel.innerHTML = storageData.storages.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('schedule-modal').classList.add('open');
+}
+
+let openingSchedule = null;
+
+async function saveSchedule() {
+  const body = {
+    name: document.getElementById('sched-name').value,
+    storage_id: document.getElementById('sched-storage').value,
+    database: document.getElementById('sched-database').value,
+    db_host: document.getElementById('sched-host').value,
+    db_port: parseInt(document.getElementById('sched-port').value) || 5432,
+    db_user: document.getElementById('sched-user').value,
+    db_password: document.getElementById('sched-password').value,
+    cron_expr: document.getElementById('sched-cron').value,
+    retention_days: parseInt(document.getElementById('sched-retention').value) || 7,
+  };
+  try {
+    await api('/api/schedule', { method: 'POST', body: JSON.stringify(body) });
+    document.getElementById('schedule-modal').classList.remove('open');
+    fetchSchedules();
+    toast('Schedule created');
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+  }
+}
+
+// ── Restore Modal ──
+
+let restoreBackupId = null;
+
+function openRestoreModal(backupId) {
+  restoreBackupId = backupId;
+  document.getElementById('restore-target-db').value = '';
+  document.getElementById('restore-host').value = 'localhost';
+  document.getElementById('restore-port').value = '5432';
+  document.getElementById('restore-user').value = '';
+  document.getElementById('restore-password').value = '';
+  document.getElementById('restore-modal').classList.add('open');
+}
+
+async function confirmRestore() {
+  const body = {
+    backup_id: restoreBackupId,
+    target_db: document.getElementById('restore-target-db').value,
+    target_host: document.getElementById('restore-host').value,
+    target_port: parseInt(document.getElementById('restore-port').value) || 5432,
+    target_user: document.getElementById('restore-user').value,
+    target_password: document.getElementById('restore-password').value,
+  };
+  try {
+    const result = await api('/api/restore', { method: 'POST', body: JSON.stringify(body) });
+    document.getElementById('restore-modal').classList.remove('open');
+    if (result.success) {
+      toast('Restore completed: ' + result.message);
+    } else {
+      toast('Restore failed: ' + result.message, true);
+    }
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+  }
+}
+
+// ── Settings ──
+let settingsLoaded = false;
+
+function switchSettings(tab) {
+  document.querySelectorAll('#page-settings .mon-subnav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('#page-settings .mon-subpage').forEach(p => p.classList.remove('active'));
+  const tgt = document.querySelector(`#page-settings .mon-subnav-item[data-set="${tab}"]`);
+  if (tgt) tgt.classList.add('active');
+  const page = document.getElementById('set-' + tab);
+  if (page) page.classList.add('active');
+  localStorage.setItem('pgshield_settings_tab', tab);
+  if (tab === 'users') loadUsers();
+}
+
+async function loadSettings() {
+  if (settingsLoaded) return;
+  settingsLoaded = true;
+  let metricsHtml = '<div class="loading">Loading...</div>';
+  try {
+    const mc = await api('/api/metrics/config');
+    metricsHtml = `
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <label style="color:var(--text2);font-size:13px">TTL метрик (дней):</label>
+        <input id="metrics-ttl" type="number" value="${mc.ttl_days}" min="1" max="365" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px;width:80px">
+        <button class="btn btn-sm" onclick="saveMetricsTtl()">Сохранить</button>
+        <button class="btn btn-sm btn-danger" onclick="clearMetrics()">Очистить историю</button>
+      </div>
+    `;
+  } catch (e) { metricsHtml = '<div class="empty">Failed to load metrics config</div>'; }
+
+  document.getElementById('set-general').innerHTML = `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:18px;color:var(--text2);margin-bottom:12px">Metrics</h2>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">${metricsHtml}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">
+      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">Server Address</label><div style="margin-top:4px">${window.location.hostname}:${window.location.port}</div></div>
+      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">API Endpoints</label><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+        ${['/api/health','/api/redis','/api/system','/api/dashboard/stats','/api/storage','/api/agents','/api/backups'].map(p => `<a href="${p}" target="_blank" style="color:var(--accent);font-size:13px">${p}</a>`).join('')}
+      </div></div>
+      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">Storage Types</label><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${['local','nfs'].map(t => badge(t, t.toUpperCase())).join('')}</div></div>
+      <hr style="border-color:var(--border);margin:20px 0">
+      <p style="color:var(--text2);font-size:13px">pgShield v0.1.0 — Management Server</p>
+    </div>
+  `;
+  document.getElementById('set-users').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2 style="font-size:18px;color:var(--text2);margin:0">Пользователи</h2>
+      <button class="btn btn-primary btn-sm" onclick="showAddUser()">+ Добавить</button>
+    </div>
+    <table><thead><tr><th>Имя</th><th>Роль</th><th>Создан</th><th></th></tr></thead><tbody id="users-list"></tbody></table>
+    <div class="modal-overlay" id="user-modal">
+      <div class="modal" style="max-width:400px">
+        <h2>Новый пользователь</h2>
+        <div class="form-group"><label>Логин</label><input id="new-username" placeholder="username"></div>
+        <div class="form-group"><label>Пароль</label><input id="new-password" type="password" placeholder="••••••"></div>
+        <div class="form-group"><label>Роль</label><select id="new-role"><option value="admin">admin</option></select></div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeUserModal()">Отмена</button>
+          <button class="btn btn-primary" onclick="saveUser()">Создать</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadUsers() {
+  const tbody = document.getElementById('users-list');
+  if (!tbody) { console.warn('users-list not in DOM yet'); return; }
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">⏳ Загрузка...</td></tr>';
+  try {
+    const users = await api('/api/users');
+    if (!users || !users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Нет пользователей</td></tr>'; return; }
+    tbody.innerHTML = users.map(u => `<tr>
+      <td><strong>${u.username}</strong>${u.username === 'admin' ? ' <span class="badge completed">default</span>' : ''}</td>
+      <td>${badge('online', u.role)}</td>
+      <td>${fmtDate(new Date(u.created_at * 1000))}</td>
+      <td>${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}')">Удалить</button>` : ''}</td>
+    </tr>`).join('');
+  } catch (e) { console.error(e); tbody.innerHTML = '<tr><td colspan="4" class="empty" style="color:var(--red)">Ошибка загрузки</td></tr>'; }
+}
+
+function showAddUser() {
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal').classList.remove('open');
+}
+
+async function saveUser() {
+  const username = document.getElementById('new-username').value;
+  const password = document.getElementById('new-password').value;
+  const role = document.getElementById('new-role').value;
+  if (!username || !password) { toast('Заполните все поля', 'error'); return; }
+  try {
+    await api('/api/users', { method: 'POST', body: JSON.stringify({ username, password, role }) });
+    toast('Пользователь создан');
+    closeUserModal();
+    loadUsers();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+async function deleteUser(username) {
+  if (!confirm('Удалить пользователя ' + username + '?')) return;
+  try {
+    await api('/api/users/' + username, { method: 'DELETE' });
+    toast('Пользователь удалён');
+    loadUsers();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+async function saveMetricsTtl() {
+  const days = parseInt(document.getElementById('metrics-ttl').value) || 30;
+  const clamped = Math.max(1, Math.min(365, days));
+  await api('/api/metrics/config', { method: 'PUT', body: JSON.stringify({ ttl_days: clamped }) });
+  toast('TTL метрик обновлён: ' + clamped + ' дней');
+}
+
+async function clearMetrics() {
+  if (!confirm('Очистить всю историю метрик?')) return;
+  await api('/api/metrics/clear', { method: 'POST' });
+  toast('История метрик очищена');
+}
+
+// ── Monitoring sub-nav ──
+let monLoaded = {};
+document.querySelectorAll('.mon-subnav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.mon-subnav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.mon-subpage').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const sub = el.dataset.sub;
+    document.getElementById('mon-' + sub).classList.add('active');
+    localStorage.setItem('pgshield_monitor_tab', sub);
+    if (!monLoaded[sub]) { monLoaded[sub] = true; loadMonitoring(); }
+  });
+});
+
+// ── Monitoring ──
+let metricCharts = {};
+
+function fmtDuration(secs) {
+  if (!secs) return '—';
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  let s = '';
+  if (d > 0) s += d + 'd ';
+  if (h > 0) s += h + 'h ';
+  s += m + 'm';
+  return s;
+}
+
+async function loadMonitoring() {
+  // Restore saved sub-tab on first load
+  if (!monLoaded.server && !monLoaded.redis && !monLoaded.resources) {
+    const saved = localStorage.getItem('pgshield_monitor_tab');
+    if (saved) {
+      document.querySelectorAll('.mon-subnav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.mon-subpage').forEach(p => p.classList.remove('active'));
+      const el = document.querySelector(`.mon-subnav-item[data-sub="${saved}"]`);
+      if (el) { el.classList.add('active'); document.getElementById('mon-' + saved).classList.add('active'); }
+    }
+  }
+  const range = document.getElementById('metrics-range').value;
+  const apiRange = ({'24h':'24h','7d':'7d','30d':'30d'})[range] || '24h';
+  try {
+    const data = await api('/api/metrics/history?range=' + apiRange);
+    if (!data.length) {
+      document.querySelector('#page-monitoring .subtitle').textContent = 'Нет данных. Подождите, метрики собираются каждые 15с.';
+      return;
+    }
+    const labels = data.map(d => new Date(d.ts * 1000).toLocaleString('ru-RU'));
+
+    const color = (a = 1) => `rgba(34,211,160,${a})`;
+    const blue = (a = 1) => `rgba(59,130,246,${a})`;
+    const purple = (a = 1) => `rgba(167,139,250,${a})`;
+    const orange = (a = 1) => `rgba(245,158,11,${a})`;
+
+    const active = document.querySelector('.mon-subnav-item.active')?.dataset.sub || 'server';
+
+    function makeChart(id, cfg) {
+      if (metricCharts[id]) { metricCharts[id].destroy(); }
+      const el = document.getElementById(id);
+      if (el) metricCharts[id] = new Chart(el, cfg);
+    }
+
+    function lineCfg(unit, border, maxTicks) {
+      return {
+        type: 'line',
+        data: { labels, datasets: [{ data: unit, borderColor: border(1), backgroundColor: border(0.1), fill: true, tension: 0.3, pointRadius: 0 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: '#8b8fa3', maxTicksLimit: maxTicks || 10, font: { size: 10 } }, grid: { color: '#2d3248' } }, y: { beginAtZero: true, ticks: { color: '#8b8fa3', font: { size: 10 } }, grid: { color: '#2d3248' } } }
+        }
+      };
+    }
+
+    if (active === 'server') {
+      makeChart('chart-cpu', lineCfg(data.map(d => d.cpu_usage), color));
+      makeChart('chart-ram', lineCfg(data.map(d => +(d.memory_percent || 0).toFixed(1)), blue));
+      makeChart('chart-disk', lineCfg(data.map(d => +(d.disk_percent || 0).toFixed(1)), orange));
+    }
+
+    if (active === 'redis') {
+      makeChart('chart-redis-ping', lineCfg(data.map(d => +(d.redis_ping_ms || 0).toFixed(2)), purple));
+      makeChart('chart-redis-memory', lineCfg(data.map(d => d.redis_memory ? +(d.redis_memory / 1048576).toFixed(1) : 0), orange));
+      makeChart('chart-redis-clients', lineCfg(data.map(d => d.redis_clients || 0), blue));
+      makeChart('chart-redis-ops', lineCfg(data.map(d => d.redis_ops_per_sec || 0), color));
+      makeChart('chart-redis-hit', lineCfg(data.map(d => d.redis_hit_rate != null ? +d.redis_hit_rate.toFixed(1) : 0), purple));
+    }
+
+    if (active === 'resources') {
+      makeChart('chart-agents', lineCfg(data.map(d => d.total_agents), color, 8));
+      makeChart('chart-storages', lineCfg(data.map(d => d.total_storage), blue, 8));
+      makeChart('chart-backups', lineCfg(data.map(d => d.total_backups), orange, 15));
+    }
+  } catch (e) { console.error(e); document.querySelector('#page-monitoring .subtitle').textContent = 'Failed to load metrics'; }
+}
+
+// ── Audit ──
+async function loadAudit() {
+  try {
+    const logs = await api('/api/audit?limit=100');
+    const tbody = document.getElementById('audit-list');
+    if (!logs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет записей аудита</td></tr>'; return; }
+    tbody.innerHTML = logs.map(l => `<tr>
+      <td style="white-space:nowrap">${fmtDate(new Date(l.ts * 1000))}</td>
+      <td>${badge(l.action === 'login' ? 'running' : 'completed', l.action)}</td>
+      <td>${l.entity_type}</td>
+      <td style="font-size:12px;color:var(--text2)">${l.entity_id.slice(0,12)}…</td>
+      <td>${l.details}</td>
+      <td>${l.user}</td>
+    </tr>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+// ── Monitoring auto-refresh ──
+let monInterval = null;
+function startMonAutoRefresh() {
+  if (monInterval) clearInterval(monInterval);
+  monInterval = setInterval(() => {
+    if (document.getElementById('page-monitoring').classList.contains('active')) {
+      const active = document.querySelector('.mon-subnav-item.active')?.dataset.sub;
+      if (active && monLoaded[active]) {
+        // Redraw only visible sub-page charts
+        const range = document.getElementById('metrics-range').value;
+        const apiRange = ({'24h':'24h','7d':'7d','30d':'30d'})[range] || '24h';
+        api('/api/metrics/history?range=' + apiRange).then(data => {
+          if (!data.length) return;
+          const labels = data.map(d => new Date(d.ts * 1000).toLocaleString('ru-RU'));
+          const color = (a = 1) => `rgba(34,211,160,${a})`;
+          const blue = (a = 1) => `rgba(59,130,246,${a})`;
+          const purple = (a = 1) => `rgba(167,139,250,${a})`;
+          const orange = (a = 1) => `rgba(245,158,11,${a})`;
+          function lineCfg(unit, border, maxTicks) {
+            return { type: 'line', data: { labels, datasets: [{ data: unit, borderColor: border(1), backgroundColor: border(0.1), fill: true, tension: 0.3, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b8fa3', maxTicksLimit: maxTicks || 10, font: { size: 10 } }, grid: { color: '#2d3248' } }, y: { beginAtZero: true, ticks: { color: '#8b8fa3', font: { size: 10 } }, grid: { color: '#2d3248' } } } } };
+          }
+          function upd(id, cfg) {
+            if (metricCharts[id]) { metricCharts[id].data = cfg.data; metricCharts[id].update('none'); }
+            else { const el = document.getElementById(id); if (el) metricCharts[id] = new Chart(el, cfg); }
+          }
+          if (active === 'server') {
+            upd('chart-cpu', lineCfg(data.map(d => d.cpu_usage), color));
+            upd('chart-ram', lineCfg(data.map(d => +(d.memory_percent || 0).toFixed(1)), blue));
+            upd('chart-disk', lineCfg(data.map(d => +(d.disk_percent || 0).toFixed(1)), orange));
+          }
+          if (active === 'redis') {
+            upd('chart-redis-ping', lineCfg(data.map(d => +(d.redis_ping_ms || 0).toFixed(2)), purple));
+            upd('chart-redis-memory', lineCfg(data.map(d => d.redis_memory ? +(d.redis_memory / 1048576).toFixed(1) : 0), orange));
+            upd('chart-redis-clients', lineCfg(data.map(d => d.redis_clients || 0), blue));
+            upd('chart-redis-ops', lineCfg(data.map(d => d.redis_ops_per_sec || 0), color));
+            upd('chart-redis-hit', lineCfg(data.map(d => d.redis_hit_rate != null ? +d.redis_hit_rate.toFixed(1) : 0), purple));
+          }
+          if (active === 'resources') {
+            upd('chart-agents', lineCfg(data.map(d => d.total_agents), color, 8));
+            upd('chart-storages', lineCfg(data.map(d => d.total_storage), blue, 8));
+            upd('chart-backups', lineCfg(data.map(d => d.total_backups), orange, 15));
+          }
+        }).catch(() => {});
+      }
+    }
+  }, 15000);
+}
+
+// ── Init ──
+async function init() {
+  await Promise.all([loadDashboard(), fetchStorage(), fetchAgents(), fetchBackups(), fetchSchedules(), loadRedisHealth()]);
+
+  // Restore last page (or dashboard)
+  const saved = localStorage.getItem('pgshield_page');
+  if (saved && document.getElementById('page-' + saved)) {
+    switchPage(saved);
+  } else {
+    document.getElementById('page-dashboard').classList.add('active');
+    document.querySelector('.nav-item[data-page="dashboard"]').classList.add('active');
+  }
+
+  // Show content after page is selected — no flash
+  document.getElementById('main-content').style.display = 'block';
+  setInterval(async () => {
+    await Promise.all([loadDashboard(), fetchStorage(), fetchAgents(), fetchBackups(), fetchSchedules(), loadRedisHealth()]);
+  }, 15000);
+  startMonAutoRefresh();
+}
+
+// Boot
+(async function() {
+  const savedUser = localStorage.getItem('pgshield_user');
+  if (savedUser) document.getElementById('current-user').textContent = savedUser;
+  if (authToken) {
+    init();
+  } else {
+    document.getElementById('login-overlay').classList.add('open');
+    document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  }
+})();
+</script>
+</body>
+</html>
