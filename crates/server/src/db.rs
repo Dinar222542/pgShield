@@ -255,10 +255,33 @@ impl Database {
                 use std::time::Duration;
 
                 let addr = format!("{}:2049", cfg.host);
-                let socket_addrs = addr.to_socket_addrs().map_err(|e| format!("DNS resolution failed: {e}"))?;
-                let sock_addr = socket_addrs.into_iter().next().ok_or("Could not resolve host")?;
-                TcpStream::connect_timeout(&sock_addr, Duration::from_secs(5))
-                    .map_err(|e| format!("NFS недоступен на {}:2049 — {e}", cfg.host))?;
+                let socket_addrs = match addr.to_socket_addrs() {
+                    Ok(a) => a,
+                    Err(e) => {
+                        let mut updated = storage.clone();
+                        updated.status = StorageStatus::Error;
+                        updated.updated_at = chrono::Utc::now();
+                        let _ = self.update_storage(&updated).await;
+                        return Err(format!("DNS resolution failed: {e}"));
+                    }
+                };
+                let sock_addr = match socket_addrs.into_iter().next() {
+                    Some(a) => a,
+                    None => {
+                        let mut updated = storage.clone();
+                        updated.status = StorageStatus::Error;
+                        updated.updated_at = chrono::Utc::now();
+                        let _ = self.update_storage(&updated).await;
+                        return Err("Could not resolve host".into());
+                    }
+                };
+                if let Err(e) = TcpStream::connect_timeout(&sock_addr, Duration::from_secs(5)) {
+                    let mut updated = storage.clone();
+                    updated.status = StorageStatus::Error;
+                    updated.updated_at = chrono::Utc::now();
+                    let _ = self.update_storage(&updated).await;
+                    return Err(format!("NFS недоступен на {}:2049 — {e}", cfg.host));
+                }
 
                 let mut details = format!("NFS port 2049 доступен на {}", cfg.host);
 
@@ -373,10 +396,18 @@ impl Database {
                             format!("Ошибка монтирования: {}", stderr)
                         };
                         details.push_str(&format!("\n⚠️  {}", msg));
+                        let mut updated = storage.clone();
+                        updated.status = StorageStatus::Error;
+                        updated.updated_at = chrono::Utc::now();
+                        let _ = self.update_storage(&updated).await;
                     }
                     Err(e) => {
                         details.push_str(&format!("\n⚠️  mount error: {e}"));
                         let _ = std::fs::remove_dir(&mountpoint);
+                        let mut updated = storage.clone();
+                        updated.status = StorageStatus::Error;
+                        updated.updated_at = chrono::Utc::now();
+                        let _ = self.update_storage(&updated).await;
                     }
                 }
 

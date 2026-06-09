@@ -89,6 +89,19 @@
     transition: all 0.15s;
   }
   .topbar .logout-btn:hover { color: var(--red); border-color: var(--red); }
+  .lang-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: auto;
+    transition: all 0.15s;
+  }
+  .lang-btn:hover { background: var(--accent-dark); color: #fff; }
   .page { display: none; }
   .page.active { display: block; }
   h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
@@ -385,65 +398,66 @@
   </div>
   <div class="nav-item" data-page="dashboard">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    <span>Dashboard</span>
+    <span data-t="dashboard">Dashboard</span>
   </div>
   <div class="nav-item" data-page="storage">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-    <span>Storage</span>
+    <span data-t="storage">Storage</span>
   </div>
   <div class="nav-item" data-page="agents">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    <span>Agents</span>
+    <span data-t="agents">Agents</span>
   </div>
   <div class="nav-item" data-page="backups">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    <span>Backups</span>
+    <span data-t="backups">Backups</span>
   </div>
   <div class="nav-item" data-page="schedules">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <span>Schedules</span>
+    <span data-t="schedules">Schedules</span>
   </div>
   <div class="nav-item" data-page="monitoring">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <span>Monitoring</span>
+    <span data-t="monitoring">Monitoring</span>
   </div>
   <div class="nav-item" data-page="audit">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    <span>Audit</span>
+    <span data-t="audit">Audit</span>
   </div>
   <div class="nav-item" data-page="settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    <span>Settings</span>
+    <span data-t="settings_nav">Settings</span>
   </div>
 </div>
 <div class="main">
   <div class="topbar">
-    <span class="user">Вы вошли как <strong id="current-user">admin</strong></span>
-    <button class="logout-btn" onclick="doLogout()">Выйти</button>
+    <button id="lang-btn" class="lang-btn" onclick="toggleLang()">EN</button>
+    <span class="user" id="user-info">Вы вошли как <strong id="current-user">admin</strong></span>
+    <button class="logout-btn" id="logout-btn">Выйти</button>
   </div>
   <div class="main-content" id="main-content" style="display:none">
   <!-- Dashboard -->
   <div class="page" id="page-dashboard">
-    <h1>Dashboard</h1>
-    <p class="subtitle">Общая статистика системы резервного копирования</p>
+    <h1 data-t="dashboard">Dashboard</h1>
+    <p class="subtitle" data-t="dashboard_sub">Общая статистика системы резервного копирования</p>
     <div class="stats" id="stats-container">
-      <div class="stat-card"><div class="label">Агенты</div><div class="value blue" id="stat-agents">—</div></div>
-      <div class="stat-card"><div class="label">Online</div><div class="value green" id="stat-online">—</div></div>
-      <div class="stat-card"><div class="label">Хранилища</div><div class="value purple" id="stat-storage">—</div></div>
-      <div class="stat-card"><div class="label">Всего бекапов</div><div class="value blue" id="stat-backups">—</div></div>
-      <div class="stat-card"><div class="label">Успешные</div><div class="value green" id="stat-ok">—</div></div>
-      <div class="stat-card"><div class="label">Ошибки</div><div class="value red" id="stat-fail">—</div></div>
-      <div class="stat-card"><div class="label">Баз данных</div><div class="value blue" id="stat-dbs">—</div></div>
-      <div class="stat-card"><div class="label">Использовано</div><div class="value orange" id="stat-usage">—</div></div>
+      <div class="stat-card"><div class="label" data-t="agents">Агенты</div><div class="value blue" id="stat-agents">—</div></div>
+      <div class="stat-card"><div class="label" data-t="online">Online</div><div class="value green" id="stat-online">—</div></div>
+      <div class="stat-card"><div class="label" data-t="storages">Хранилища</div><div class="value purple" id="stat-storage">—</div></div>
+      <div class="stat-card"><div class="label" data-t="total_backups">Всего бекапов</div><div class="value blue" id="stat-backups">—</div></div>
+      <div class="stat-card"><div class="label" data-t="successful">Успешные</div><div class="value green" id="stat-ok">—</div></div>
+      <div class="stat-card"><div class="label" data-t="errors">Ошибки</div><div class="value red" id="stat-fail">—</div></div>
+      <div class="stat-card"><div class="label" data-t="databases">Баз данных</div><div class="value blue" id="stat-dbs">—</div></div>
+      <div class="stat-card"><div class="label" data-t="used">Использовано</div><div class="value orange" id="stat-usage">—</div></div>
     </div>
-    <h2 style="font-size:18px;margin-bottom:16px;color:var(--text2)">Redis</h2>
+    <h2 style="font-size:18px;margin-bottom:16px;color:var(--text2)" data-t="redis">Redis</h2>
     <div class="stats" id="redis-stats">
       <div class="stat-card"><div class="label">Ping</div><div class="value green" id="redis-ping">—</div></div>
-      <div class="stat-card"><div class="label">Память</div><div class="value orange" id="redis-memory">—</div></div>
-      <div class="stat-card"><div class="label">Клиенты</div><div class="value blue" id="redis-clients">—</div></div>
+      <div class="stat-card"><div class="label" data-t="memory">Память</div><div class="value orange" id="redis-memory">—</div></div>
+      <div class="stat-card"><div class="label" data-t="clients">Клиенты</div><div class="value blue" id="redis-clients">—</div></div>
       <div class="stat-card"><div class="label">Ops/sec</div><div class="value purple" id="redis-ops">—</div></div>
       <div class="stat-card"><div class="label">Hit Rate</div><div class="value green" id="redis-hit">—</div></div>
-      <div class="stat-card"><div class="label">Ключи</div><div class="value blue" id="redis-keys">—</div></div>
+      <div class="stat-card"><div class="label" data-t="keys">Ключи</div><div class="value blue" id="redis-keys">—</div></div>
       <div class="stat-card"><div class="label">Uptime</div><div class="value" id="redis-uptime">—</div></div>
       <div class="stat-card"><div class="label">Version</div><div class="value" style="font-size:20px" id="redis-version">—</div></div>
     </div>
@@ -452,61 +466,61 @@
   <!-- Storage -->
   <div class="page" id="page-storage">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h1>Storage Backends</h1>
-      <button class="btn btn-primary" onclick="openStorageModal()">+ Add Storage</button>
+      <h1 data-t="storage">Storage Backends</h1>
+      <button class="btn btn-primary" onclick="openStorageModal()" data-t="add_storage">+ Add Storage</button>
     </div>
-    <p class="subtitle">Управление хранилищами: Local, NFS</p>
-    <table><thead><tr><th>Имя</th><th>Тип</th><th>Статус</th><th>Compression</th><th>Dedup</th><th>Retention</th><th>Использовано</th><th></th></tr></thead><tbody id="storage-list"></tbody></table>
+    <p class="subtitle" data-t-html="storage_types">Управление хранилищами: Local, NFS</p>
+    <table><thead><tr><th data-t="name">Имя</th><th data-t="type">Тип</th><th data-t="status">Статус</th><th data-t="compression">Compression</th><th data-t="dedup">Dedup</th><th data-t="retention">Retention</th><th data-t="used">Использовано</th><th></th></tr></thead><tbody id="storage-list"></tbody></table>
   </div>
 
   <!-- Agents -->
   <div class="page" id="page-agents">
-    <h1>Agents</h1>
-    <p class="subtitle">Управление агентами резервного копирования</p>
+    <h1 data-t="agents">Agents</h1>
+    <p class="subtitle" data-t="agent_mgmt">Управление агентами резервного копирования</p>
     <div class="toolbar">
-      <button class="btn" onclick="fetchAgents()" style="padding:8px 16px">🔄 Обновить</button>
+      <button class="btn" onclick="fetchAgents()" style="padding:8px 16px" data-t="refresh">🔄 Обновить</button>
     </div>
-    <table><thead><tr><th>Имя</th><th>Хост</th><th>Порт</th><th>Статус</th><th>Версия</th><th>Последний раз</th><th>ID</th></tr></thead><tbody id="agents-list"></tbody></table>
+    <table><thead><tr><th data-t="name">Имя</th><th data-t="host">Хост</th><th data-t="port">Порт</th><th data-t="status">Статус</th><th data-t="version">Версия</th><th data-t="last_seen">Последний раз</th><th data-t="id">ID</th></tr></thead><tbody id="agents-list"></tbody></table>
   </div>
 
   <!-- Backups -->
   <div class="page" id="page-backups">
-    <h1>Backups</h1>
-    <p class="subtitle">История резервных копий</p>
+    <h1 data-t="backups">Backups</h1>
+    <p class="subtitle" data-t="backups_sub">История резервных копий</p>
     <div class="toolbar">
-      <button class="btn" onclick="fetchBackups()" style="padding:8px 16px">🔄 Обновить</button>
+      <button class="btn" onclick="fetchBackups()" style="padding:8px 16px" data-t="refresh">🔄 Обновить</button>
     </div>
-    <table><thead><tr><th>База</th><th>Тип</th><th>Статус</th><th>Размер</th><th>Агент</th><th>Хранилище</th><th>Создан</th><th></th></tr></thead><tbody id="backups-list"></tbody></table>
+    <table><thead><tr><th data-t="database">База</th><th data-t="type">Тип</th><th data-t="status">Статус</th><th data-t="size">Размер</th><th data-t="agent">Агент</th><th data-t="storage">Хранилище</th><th data-t="created">Создан</th><th></th></tr></thead><tbody id="backups-list"></tbody></table>
   </div>
 
   <!-- Schedules -->
   <div class="page" id="page-schedules">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h1>Schedules</h1>
-      <button class="btn btn-primary" onclick="openScheduleModal()">+ Add Schedule</button>
+      <h1 data-t="schedules">Schedules</h1>
+      <button class="btn btn-primary" onclick="openScheduleModal()" data-t="add_schedule">+ Add Schedule</button>
     </div>
-    <p class="subtitle">Расписания автоматического резервного копирования</p>
-    <table><thead><tr><th>Название</th><th>База</th><th>Хост:Порт</th><th>Cron</th><th>Retention</th><th>Последний запуск</th><th>Статус</th><th></th></tr></thead><tbody id="schedules-list"></tbody></table>
+    <p class="subtitle" data-t="schedules_sub">Расписания автоматического резервного копирования</p>
+    <table><thead><tr><th data-t="name">Название</th><th data-t="database">База</th><th data-t="hostport">Хост:Порт</th><th data-t="cron">Cron</th><th data-t="retention">Retention</th><th data-t="last_run">Последний запуск</th><th data-t="status">Статус</th><th></th></tr></thead><tbody id="schedules-list"></tbody></table>
   </div>
 
   <!-- Monitoring -->
   <div class="page" id="page-monitoring">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h1>Monitoring</h1>
+      <h1 data-t="monitoring">Monitoring</h1>
       <div class="toolbar" style="margin-bottom:0">
         <select id="metrics-range" onchange="loadMonitoring()">
-          <option value="24h">Last 24 hours</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
+          <option value="24h" data-t="last_24h">Last 24 hours</option>
+          <option value="7d" data-t="last_7d">Last 7 days</option>
+          <option value="30d" data-t="last_30d">Last 30 days</option>
         </select>
       </div>
     </div>
-    <p class="subtitle">История метрик сервера, Redis, агентов и хранилищ</p>
+    <p class="subtitle" data-t="monitoring_sub">История метрик сервера, Redis, агентов и хранилищ</p>
 
     <div class="mon-subnav">
-      <div class="mon-subnav-item active" data-sub="server">Server</div>
-      <div class="mon-subnav-item" data-sub="redis">Redis</div>
-      <div class="mon-subnav-item" data-sub="resources">Agents &amp; Storages</div>
+      <div class="mon-subnav-item active" data-sub="server" data-t="server">Server</div>
+      <div class="mon-subnav-item" data-sub="redis" data-t="redis">Redis</div>
+      <div class="mon-subnav-item" data-sub="resources" data-t="agents_storages">Agents &amp; Storages</div>
     </div>
 
     <div class="mon-subpage active" id="mon-server">
@@ -538,8 +552,8 @@
 
   <!-- Audit -->
   <div class="page" id="page-audit">
-    <h1>Audit Log</h1>
-    <p class="subtitle">Все действия в системе</p>
+    <h1 data-t="audit_log">Audit Log</h1>
+    <p class="subtitle" data-t="audit_sub">Все действия в системе</p>
     <div class="toolbar">
       <button class="btn" onclick="loadAudit()" style="padding:8px 16px">🔄 Обновить</button>
     </div>
@@ -550,12 +564,12 @@
 
   <!-- Settings -->
   <div class="page" id="page-settings">
-    <h1>Settings</h1>
-    <p class="subtitle">Конфигурация сервера</p>
+    <h1 data-t="settings_title">Settings</h1>
+    <p class="subtitle" data-t="settings_sub">Конфигурация сервера</p>
 
     <div class="mon-subnav" style="margin-bottom:24px">
-      <div class="mon-subnav-item active" data-set="general" onclick="switchSettings('general')">General</div>
-      <div class="mon-subnav-item" data-set="users" onclick="switchSettings('users')">Users</div>
+      <div class="mon-subnav-item active" data-set="general" onclick="switchSettings('general')" data-t="general">General</div>
+      <div class="mon-subnav-item" data-set="users" onclick="switchSettings('users')" data-t="users">Users</div>
     </div>
 
     <div class="mon-subpage active" id="set-general"></div>
@@ -567,14 +581,14 @@
 <!-- Storage Modal -->
 <div class="modal-overlay" id="storage-modal">
   <div class="modal">
-    <h2 id="storage-modal-title">Add Storage Backend</h2>
+    <h2 id="storage-modal-title" data-t-html="add_storage_backend">Add Storage Backend</h2>
     <div class="form-group">
-      <label>Название</label>
+      <label data-t="name">Название</label>
       <input id="sf-name" placeholder="e.g. Main Backup Pool">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Тип хранилища</label>
+        <label data-t="storage_type">Тип хранилища</label>
             <select id="sf-type" onchange="onStorageTypeChange()">
           <option value="local">Local</option>
           <option value="nfs">NFS</option>
@@ -592,7 +606,7 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Retention (дней)</label>
+        <label data-t="retention">Retention (дней)</label>
         <input id="sf-retention" type="number" value="30">
       </div>
       <div class="form-group">
@@ -604,7 +618,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Описание</label>
+      <label data-t="description">Описание</label>
       <input id="sf-description" placeholder="Optional description">
     </div>
 
@@ -623,8 +637,8 @@
 
 
     <div class="modal-actions">
-      <button class="btn" onclick="closeStorageModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveStorage()">Save</button>
+      <button class="btn" onclick="closeStorageModal()" data-t="cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStorage()" data-t="save">Save</button>
     </div>
   </div>
 </div>
@@ -632,28 +646,28 @@
 <!-- Schedule Modal -->
 <div class="modal-overlay" id="schedule-modal">
   <div class="modal">
-    <h2 id="sched-modal-title">Add Schedule</h2>
+    <h2 id="sched-modal-title" data-t-html="add_schedule">Add Schedule</h2>
     <div class="form-group">
-      <label>Название</label>
+      <label data-t="name">Название</label>
       <input id="sched-name" placeholder="e.g. Nightly Backup">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>База данных</label>
+        <label data-t="database">База данных</label>
         <input id="sched-database" placeholder="mydb">
       </div>
       <div class="form-group">
-        <label>Хранилище</label>
+        <label data-t="storage_label">Хранилище</label>
         <select id="sched-storage"></select>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Хост БД</label>
+        <label data-t="db_host">Хост БД</label>
         <input id="sched-host" placeholder="localhost">
       </div>
       <div class="form-group">
-        <label>Порт</label>
+        <label data-t="port">Порт</label>
         <input id="sched-port" type="number" value="5432">
       </div>
     </div>
@@ -673,13 +687,13 @@
         <input id="sched-cron" placeholder="0 0 * * * *" value="0 0 * * * *">
       </div>
       <div class="form-group">
-        <label>Retention (дней)</label>
+        <label data-t="retention">Retention (дней)</label>
         <input id="sched-retention" type="number" value="7">
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="document.getElementById('schedule-modal').classList.remove('open')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSchedule()">Save</button>
+      <button class="btn" onclick="document.getElementById('schedule-modal').classList.remove('open')" data-t="cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSchedule()" data-t="save">Save</button>
     </div>
   </div>
 </div>
@@ -687,19 +701,19 @@
 <!-- Restore Modal -->
 <div class="modal-overlay" id="restore-modal">
   <div class="modal">
-    <h2>Restore Backup</h2>
-    <p class="subtitle" style="margin-bottom:16px">Укажите базу назначения для восстановления</p>
+    <h2 data-t="restore_backup">Restore Backup</h2>
+    <p class="subtitle" style="margin-bottom:16px" data-t="restore_target_hint">Укажите базу назначения для восстановления</p>
     <div class="form-group">
-      <label>База назначения</label>
+      <label data-t="target_db">База назначения</label>
       <input id="restore-target-db" placeholder="mydb_restored">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Хост</label>
+        <label data-t="host">Хост</label>
         <input id="restore-host" placeholder="localhost" value="localhost">
       </div>
       <div class="form-group">
-        <label>Порт</label>
+        <label data-t="port">Порт</label>
         <input id="restore-port" type="number" value="5432">
       </div>
     </div>
@@ -714,8 +728,8 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="document.getElementById('restore-modal').classList.remove('open')">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmRestore()">Restore</button>
+      <button class="btn" onclick="document.getElementById('restore-modal').classList.remove('open')" data-t="cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRestore()" data-t="restore">Restore</button>
     </div>
   </div>
 </div>
@@ -725,6 +739,146 @@
 
 <script>
 const API = '';
+const LANG_KEY = 'pgshield_lang';
+let currentLang = localStorage.getItem(LANG_KEY) || 'ru';
+
+const lang = {
+  ru: {
+    dashboard: 'Дашборд', agents: 'Агенты', backups: 'Каталог бэкапов', storage: 'Хранилища',
+    schedules: 'Задания', monitoring: 'Мониторинг', audit: 'Аудит', settings_nav: 'Настройки',
+    settings_title: 'Настройки',
+    add_storage: '+ Add Storage', add_schedule: '+ Add Schedule',
+    save: 'Save', cancel: 'Cancel', delete: 'Удалить', restore: 'Restore',
+    nfs_port_ok: 'NFS port 2049 доступен на', exports: 'Экспорты',
+    mounted_ok: 'Смонтирован успешно', bind_mount: 'NFS смонтирован на хосте (bind mount)',
+    no_backups: 'Нет бекапов', no_schedules: 'Нет заданий', no_agents: 'Нет агентов',
+    no_storages: 'Нет хранилищ', no_audit: 'Нет записей аудита',
+    loading: 'Loading...', refresh: '🔄 Обновить',
+    logged_as: 'Вы вошли как', logout: 'Выйти',
+    name: 'Название', type: 'Тип', status: 'Статус', host: 'Хост', port: 'Порт',
+    version: 'Версия', last_seen: 'Последний раз', id: 'ID', created: 'Создан',
+    db: 'База', size: 'Размер', agent: 'Агент', storage_label: 'Хранилище',
+    compression: 'Сжатие', dedup: 'Дедупликация', retention: 'Срок хранения', used: 'Использовано',
+    test: 'Test', edit: 'Edit', del: 'Del',
+    on: 'ON', off: 'OFF', success: 'success', failed: 'failed',
+    online: 'Online', storages: 'Хранилища', total_backups: 'Всего бекапов',
+    successful: 'Успешные', errors: 'Ошибки', databases: 'Баз данных',
+    keys: 'Ключи', memory: 'Память', clients: 'Клиенты',
+    database: 'База', hostport: 'Хост:Порт', cron: 'Cron', last_run: 'Последний запуск',
+    label: 'Label', run_backup: '+ Запустить бэкап',
+    audit_log: 'Аудит', audit_sub: 'Все действия в системе',
+    dashboard_sub: 'Общая статистика системы резервного копирования',
+    backups_sub: 'История резервных копий',
+    schedules_sub: 'Задания автоматического резервного копирования',
+    settings_sub: 'Конфигурация сервера',
+    agent_mgmt: 'Управление агентами резервного копирования',
+    storage_types: 'Управление хранилищами: Local, NFS',
+    monitoring_sub: 'История метрик сервера, Redis, агентов и хранилищ',
+    last_24h: 'Последние 24 часа', last_7d: 'Последние 7 дней', last_30d: 'Последние 30 дней',
+    server: 'Сервер', redis: 'Redis', agents_storages: 'Агенты и хранилища',
+    actions: 'Действия', general: 'Главная', users: 'Пользователи',
+    add_storage_backend: 'Add Storage Backend', edit_storage_backend: 'Edit Storage Backend',
+    add_user: '+ Добавить', new_user: 'Новый пользователь', login: 'Логин', password: 'Пароль',
+    create: 'Создать', role: 'Роль', no_users: 'Нет пользователей', error: 'Ошибка',
+    restore_backup: 'Restore Backup', restore_target_hint: 'Укажите базу назначения для восстановления',
+    target_db: 'База назначения', db_host: 'Хост БД',
+    storage_type: 'Тип хранилища', description: 'Описание',
+    stat_card_names: ['Агенты','Online','Хранилища','Всего бекапов','Успешные','Ошибки','Баз данных','Использовано'],
+    stats: { agents: 'Агенты', online: 'Online', storages: 'Хранилища', backups: 'Всего бекапов',
+      successful: 'Успешные', errors: 'Ошибки', databases: 'Баз данных', usage: 'Использовано' },
+    settings: { general: 'Главная', users: 'Пользователи', ttl: 'TTL метрик (дней)', save_ttl: 'Сохранить',
+      clear_metrics: 'Очистить историю', server_addr: 'Server Address', api_endpoints: 'API Endpoints' },
+  },
+  en: {
+    dashboard: 'Dashboard', agents: 'Agents', backups: 'Backups', storage: 'Storage',
+    schedules: 'Schedules', monitoring: 'Monitoring', audit: 'Audit', settings_nav: 'Settings',
+    settings_title: 'Settings',
+    add_storage: '+ Add Storage', add_schedule: '+ Add Schedule',
+    save: 'Save', cancel: 'Cancel', delete: 'Delete', restore: 'Restore',
+    nfs_port_ok: 'NFS port 2049 accessible at', exports: 'Exports',
+    mounted_ok: 'Mounted successfully', bind_mount: 'NFS mounted on host (bind mount)',
+    no_backups: 'No backups', no_schedules: 'No schedules', no_agents: 'No agents',
+    no_storages: 'No storages', no_audit: 'No audit entries',
+    loading: 'Loading...', refresh: '🔄 Refresh',
+    logged_as: 'Logged in as', logout: 'Logout',
+    name: 'Name', type: 'Type', status: 'Status', host: 'Host', port: 'Port',
+    version: 'Version', last_seen: 'Last seen', id: 'ID', created: 'Created',
+    db: 'Database', size: 'Size', agent: 'Agent', storage_label: 'Storage',
+    compression: 'Compression', dedup: 'Dedup', retention: 'Retention', used: 'Used',
+    test: 'Test', edit: 'Edit', del: 'Del',
+    on: 'ON', off: 'OFF', success: 'success', failed: 'failed',
+    online: 'Online', storages: 'Storages', total_backups: 'Total backups',
+    successful: 'Successful', errors: 'Errors', databases: 'Databases',
+    keys: 'Keys', memory: 'Memory', clients: 'Clients',
+    database: 'Database', hostport: 'Host:Port', cron: 'Cron', last_run: 'Last run',
+    label: 'Label', run_backup: '+ Run Backup',
+    audit_log: 'Audit Log', audit_sub: 'All system actions',
+    dashboard_sub: 'Backup system overview',
+    backups_sub: 'Backup history',
+    schedules_sub: 'Automatic backup schedules',
+    settings_sub: 'Server configuration',
+    agent_mgmt: 'Backup agent management',
+    storage_types: 'Storage management: Local, NFS',
+    monitoring_sub: 'Server, Redis, agent and storage metrics history',
+    last_24h: 'Last 24 hours', last_7d: 'Last 7 days', last_30d: 'Last 30 days',
+    server: 'Server', redis: 'Redis', agents_storages: 'Agents & Storages',
+    actions: 'Actions', general: 'General', users: 'Users',
+    add_storage_backend: 'Add Storage Backend', edit_storage_backend: 'Edit Storage Backend',
+    add_user: '+ Add', new_user: 'New user', login: 'Login', password: 'Password',
+    create: 'Create', role: 'Role', no_users: 'No users', error: 'Error',
+    restore_backup: 'Restore Backup', restore_target_hint: 'Specify target database for restore',
+    target_db: 'Target database', db_host: 'DB Host',
+    storage_type: 'Storage Type', description: 'Description',
+    stat_card_names: ['Agents','Online','Storages','Total Backups','Successful','Errors','Databases','Used'],
+    stats: { agents: 'Agents', online: 'Online', storages: 'Storages', backups: 'Total backups',
+      successful: 'Successful', errors: 'Errors', databases: 'Databases', usage: 'Used' },
+    settings: { general: 'General', users: 'Users', ttl: 'Metrics TTL (days)', save_ttl: 'Save',
+      clear_metrics: 'Clear history', server_addr: 'Server Address', api_endpoints: 'API Endpoints' },
+  },
+};
+
+function t(key) {
+  let keys = key.split('.');
+  let obj = lang[currentLang];
+  for (let k of keys) { if (obj) obj = obj[k]; }
+  return obj || key;
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'ru' ? 'en' : 'ru';
+  localStorage.setItem(LANG_KEY, currentLang);
+  document.getElementById('lang-btn').textContent = currentLang === 'ru' ? 'EN' : 'RU';
+  translateUI();
+  // Reload current page content
+  const active = document.querySelector('.page.active');
+  if (active) {
+    const page = active.id.replace('page-', '');
+    if (page === 'dashboard') loadDashboard();
+    else if (page === 'storage') fetchStorage();
+    else if (page === 'agents') fetchAgents();
+    else if (page === 'backups') fetchBackups();
+    else if (page === 'schedules') fetchSchedules();
+    else if (page === 'monitoring') { loadMonitoring(); }
+    else if (page === 'audit') loadAudit();
+    else if (page === 'settings') { loadSettings().then(() => switchSettings(localStorage.getItem('pgshield_settings_tab') || 'general')); }
+  }
+}
+
+function translateUI() {
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.dataset.t;
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-t-html]').forEach(el => {
+    const key = el.dataset.tHtml;
+    el.innerHTML = t(key);
+  });
+  // Topbar
+  document.getElementById('user-info').innerHTML = t('logged_as') + ' <strong id="current-user">' + document.getElementById('current-user').textContent + '</strong>';
+  document.getElementById('logout-btn').textContent = t('logout');
+  document.getElementById('lang-btn').textContent = currentLang === 'ru' ? 'EN' : 'RU';
+}
+
 let storageData = { agents: [], backups: [], storages: [] };
 let editingStorageId = null;
 let authToken = localStorage.getItem('token') || null;
@@ -931,8 +1085,9 @@ function getStorageConfig() {
 }
 
 function openStorageModal(data) {
-  editingStorageId = null;
-  document.getElementById('storage-modal-title').textContent = 'Add Storage Backend';
+  editingStorageId = data ? data.id : null;
+  document.getElementById('storage-modal-title').textContent = t(editingStorageId ? 'edit_storage_backend' : 'add_storage_backend');
+  translateUI();
   document.getElementById('sf-name').value = '';
   document.getElementById('sf-type').value = 'local';
   document.getElementById('sf-compression').value = 'zstd';
@@ -945,8 +1100,6 @@ function openStorageModal(data) {
   document.getElementById('sc-nfs-opts').value = 'vers=4.2,hard,intr';
 
   if (data) {
-    editingStorageId = data.id;
-    document.getElementById('storage-modal-title').textContent = 'Edit Storage Backend';
     document.getElementById('sf-name').value = data.name;
     document.getElementById('sf-type').value = data.storage_type;
     document.getElementById('sf-compression').value = data.compression;
@@ -1078,7 +1231,6 @@ async function deleteSchedule(id) {
 
 function openScheduleModal() {
   openingSchedule = null;
-  document.getElementById('sched-modal-title').textContent = 'Add Schedule';
   document.getElementById('sched-name').value = '';
   document.getElementById('sched-database').value = '';
   document.getElementById('sched-host').value = '';
@@ -1128,6 +1280,7 @@ function openRestoreModal(backupId) {
   document.getElementById('restore-port').value = '5432';
   document.getElementById('restore-user').value = '';
   document.getElementById('restore-password').value = '';
+  translateUI();
   document.getElementById('restore-modal').classList.add('open');
 }
 
@@ -1154,7 +1307,6 @@ async function confirmRestore() {
 }
 
 // ── Settings ──
-let settingsLoaded = false;
 
 function switchSettings(tab) {
   document.querySelectorAll('#page-settings .mon-subnav-item').forEach(n => n.classList.remove('active'));
@@ -1165,20 +1317,19 @@ function switchSettings(tab) {
   if (page) page.classList.add('active');
   localStorage.setItem('pgshield_settings_tab', tab);
   if (tab === 'users') loadUsers();
+  if (page && !page.innerHTML.trim()) { loadSettings().then(() => { if (tab === 'users') loadUsers(); }); }
 }
 
 async function loadSettings() {
-  if (settingsLoaded) return;
-  settingsLoaded = true;
-  let metricsHtml = '<div class="loading">Loading...</div>';
+  let metricsHtml = '<div class="loading">' + t('loading') + '...</div>';
   try {
     const mc = await api('/api/metrics/config');
     metricsHtml = `
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label style="color:var(--text2);font-size:13px">TTL метрик (дней):</label>
+        <label style="color:var(--text2);font-size:13px">${t('settings.ttl')}:</label>
         <input id="metrics-ttl" type="number" value="${mc.ttl_days}" min="1" max="365" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px;width:80px">
-        <button class="btn btn-sm" onclick="saveMetricsTtl()">Сохранить</button>
-        <button class="btn btn-sm btn-danger" onclick="clearMetrics()">Очистить историю</button>
+        <button class="btn btn-sm" onclick="saveMetricsTtl()">${t('settings.save_ttl')}</button>
+        <button class="btn btn-sm btn-danger" onclick="clearMetrics()">${t('settings.clear_metrics')}</button>
       </div>
     `;
   } catch (e) { metricsHtml = '<div class="empty">Failed to load metrics config</div>'; }
@@ -1189,8 +1340,8 @@ async function loadSettings() {
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">${metricsHtml}</div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">
-      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">Server Address</label><div style="margin-top:4px">${window.location.hostname}:${window.location.port}</div></div>
-      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">API Endpoints</label><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">${t('settings.server_addr')}</label><div style="margin-top:4px">${window.location.hostname}:${window.location.port}</div></div>
+      <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">${t('settings.api_endpoints')}</label><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
         ${['/api/health','/api/redis','/api/system','/api/dashboard/stats','/api/storage','/api/agents','/api/backups'].map(p => `<a href="${p}" target="_blank" style="color:var(--accent);font-size:13px">${p}</a>`).join('')}
       </div></div>
       <div style="margin-bottom:16px"><label style="color:var(--text2);font-size:13px">Storage Types</label><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${['local','nfs'].map(t => badge(t, t.toUpperCase())).join('')}</div></div>
@@ -1200,19 +1351,19 @@ async function loadSettings() {
   `;
   document.getElementById('set-users').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h2 style="font-size:18px;color:var(--text2);margin:0">Пользователи</h2>
-      <button class="btn btn-primary btn-sm" onclick="showAddUser()">+ Добавить</button>
+      <h2 style="font-size:18px;color:var(--text2);margin:0">${t('users')}</h2>
+      <button class="btn btn-primary btn-sm" onclick="showAddUser()">+ ${t('add_user')}</button>
     </div>
-    <table><thead><tr><th>Имя</th><th>Роль</th><th>Создан</th><th></th></tr></thead><tbody id="users-list"></tbody></table>
+    <table><thead><tr><th>${t('name')}</th><th>${t('role')}</th><th>${t('created')}</th><th></th></tr></thead><tbody id="users-list"></tbody></table>
     <div class="modal-overlay" id="user-modal">
       <div class="modal" style="max-width:400px">
-        <h2>Новый пользователь</h2>
-        <div class="form-group"><label>Логин</label><input id="new-username" placeholder="username"></div>
-        <div class="form-group"><label>Пароль</label><input id="new-password" type="password" placeholder="••••••"></div>
-        <div class="form-group"><label>Роль</label><select id="new-role"><option value="admin">admin</option></select></div>
+        <h2>${t('new_user')}</h2>
+        <div class="form-group"><label>${t('login')}</label><input id="new-username" placeholder="username"></div>
+        <div class="form-group"><label>${t('password')}</label><input id="new-password" type="password" placeholder="••••••"></div>
+        <div class="form-group"><label>${t('role')}</label><select id="new-role"><option value="admin">admin</option></select></div>
         <div class="modal-actions">
-          <button class="btn" onclick="closeUserModal()">Отмена</button>
-          <button class="btn btn-primary" onclick="saveUser()">Создать</button>
+          <button class="btn" onclick="closeUserModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="saveUser()">${t('create')}</button>
         </div>
       </div>
     </div>
@@ -1222,17 +1373,17 @@ async function loadSettings() {
 async function loadUsers() {
   const tbody = document.getElementById('users-list');
   if (!tbody) { console.warn('users-list not in DOM yet'); return; }
-  tbody.innerHTML = '<tr><td colspan="4" class="empty">⏳ Загрузка...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">⏳ ' + t('loading') + '...</td></tr>';
   try {
     const users = await api('/api/users');
-    if (!users || !users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Нет пользователей</td></tr>'; return; }
+    if (!users || !users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">' + t('no_users') + '</td></tr>'; return; }
     tbody.innerHTML = users.map(u => `<tr>
       <td><strong>${u.username}</strong>${u.username === 'admin' ? ' <span class="badge completed">default</span>' : ''}</td>
       <td>${badge('online', u.role)}</td>
       <td>${fmtDate(new Date(u.created_at * 1000))}</td>
-      <td>${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}')">Удалить</button>` : ''}</td>
+      <td>${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}')">${t('delete')}</button>` : ''}</td>
     </tr>`).join('');
-  } catch (e) { console.error(e); tbody.innerHTML = '<tr><td colspan="4" class="empty" style="color:var(--red)">Ошибка загрузки</td></tr>'; }
+  } catch (e) { console.error(e); tbody.innerHTML = '<tr><td colspan="4" class="empty" style="color:var(--red)">' + t('error') + '</td></tr>'; }
 }
 
 function showAddUser() {
@@ -1442,6 +1593,7 @@ function startMonAutoRefresh() {
 
 // ── Init ──
 async function init() {
+  translateUI();
   await Promise.all([loadDashboard(), fetchStorage(), fetchAgents(), fetchBackups(), fetchSchedules(), loadRedisHealth()]);
 
   // Restore last page (or dashboard)
